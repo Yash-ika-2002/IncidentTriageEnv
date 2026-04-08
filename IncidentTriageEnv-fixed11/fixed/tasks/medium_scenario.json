@@ -1,0 +1,22 @@
+{
+  "incident_id": "INC-2024-0117",
+  "timestamp": "2024-03-16T09:15:00Z",
+  "initial_service": "api-gateway",
+  "initial_error_rate": 0.41,
+  "initial_p99_latency_ms": 12800,
+  "initial_log_snippet": "2024-03-16T09:14:45Z ERROR [api-gateway] Upstream timeout: auth-service responded in 11230ms (threshold=5000ms)\n2024-03-16T09:14:50Z ERROR [api-gateway] 401 Unauthorized flood: 1847 requests/min rejected downstream\n2024-03-16T09:14:55Z ERROR [postgres-primary] Slow query log: SELECT * FROM sessions WHERE token=? took 9823ms (index missing on sessions.token)\n2024-03-16T09:15:00Z WARN  [auth-service] JWT validation latency p99=11400ms - DB query degradation detected\n2024-03-16T09:15:00Z ERROR [user-service] Cascading: auth validation failures causing 503s on /api/v1/user/profile\n2024-03-16T09:15:00Z INFO  [auth-service] Config change deployed 9m ago: session_store backend switched from redis to postgres",
+  "affected_endpoints": [
+    "/api/v1/user/profile",
+    "/api/v1/orders/*",
+    "/api/v1/payments/*",
+    "/api/v1/auth/validate"
+  ],
+  "max_steps": 15,
+  "ground_truth": {
+    "root_cause_service": "auth-service",
+    "root_cause": "misconfiguration",
+    "severity": "P1",
+    "responsible_team": "backend",
+    "resolution_keywords": ["auth", "config", "session", "redis", "rollback", "revert", "postgres"]
+  }
+}

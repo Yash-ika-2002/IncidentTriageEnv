@@ -1,0 +1,21 @@
+{
+  "incident_id": "INC-2024-0042",
+  "timestamp": "2024-03-15T14:23:00Z",
+  "initial_service": "payment-service",
+  "initial_error_rate": 0.72,
+  "initial_p99_latency_ms": 8400,
+  "initial_log_snippet": "2024-03-15T14:22:58Z ERROR [payment-service] DatabaseConnectionError: connection pool exhausted (pool_size=10, waiting=47)\n2024-03-15T14:22:59Z ERROR [payment-service] Failed to process payment for order_id=88412: timeout after 5000ms\n2024-03-15T14:23:00Z ERROR [payment-service] CRITICAL: 72% of requests failing - DB connection pool exhausted\n2024-03-15T14:23:01Z WARN  [payment-service] Retry queue depth: 1243 pending transactions",
+  "affected_endpoints": [
+    "/api/v1/payments/create",
+    "/api/v1/payments/confirm",
+    "/api/v1/orders/checkout"
+  ],
+  "max_steps": 10,
+  "ground_truth": {
+    "root_cause_service": "payment-service",
+    "root_cause": "database_overload",
+    "severity": "P2",
+    "responsible_team": "database",
+    "resolution_keywords": ["pool", "database", "connection", "restart", "scale", "config"]
+  }
+}
