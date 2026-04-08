@@ -1,0 +1,25 @@
+{
+  "incident_id": "INC-2024-0289",
+  "timestamp": "2024-03-17T22:47:00Z",
+  "initial_service": "recommendation-service",
+  "initial_error_rate": 0.28,
+  "initial_p99_latency_ms": 4200,
+  "initial_log_snippet": "2024-03-17T22:46:30Z ERROR [recommendation-service] RedisClusterError: CLUSTERDOWN The cluster is down (3/5 nodes unreachable)\n2024-03-17T22:46:35Z ERROR [search-service] RedisClusterError: CLUSTERDOWN - same cluster endpoint redis-cluster-prod:6379\n2024-03-17T22:46:38Z WARN  [notification-service] High memory usage: 91% heap (GC pressure, not Redis)\n2024-03-17T22:46:40Z ERROR [recommendation-service] Fallback to cold cache failed: upstream Redis unavailable\n2024-03-17T22:46:45Z ERROR [search-service] Full-text search degraded: Redis pipeline broken\n2024-03-17T22:46:50Z WARN  [notification-service] Email dispatch latency 3800ms (SLA=2000ms) - internal queue backlog\n2024-03-17T22:46:55Z ERROR [redis-cluster-prod] Node redis-node-3 lost quorum: net split detected on subnet 10.0.3.0/24\n2024-03-17T22:47:00Z ERROR [redis-cluster-prod] Node redis-node-4 lost quorum: same subnet 10.0.3.0/24\n2024-03-17T22:47:00Z INFO  [notification-service] GC pause 420ms - within acceptable bounds",
+  "affected_endpoints": [
+    "/api/v1/recommendations",
+    "/api/v1/search",
+    "/api/v1/notifications/send"
+  ],
+  "max_steps": 20,
+  "ground_truth": {
+    "root_cause_service": "redis-cluster-prod",
+    "root_cause": "network_partition",
+    "severity": "P2",
+    "responsible_team": "infrastructure",
+    "resolution_keywords": ["redis", "network", "partition", "subnet", "cluster", "node", "quorum", "split"]
+  },
+  "red_herrings": [
+    "notification-service memory usage is normal GC pressure, not the root cause",
+    "recommendation-service and search-service are victims of the Redis cluster failure, not causes"
+  ]
+}

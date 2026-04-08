@@ -1,0 +1,155 @@
+name: IncidentTriageEnv
+version: "1.0.0"
+description: >
+  A production API incident triage environment where an AI agent receives
+  real-time telemetry packets (error rates, latency, log snippets, affected
+  endpoints) and must diagnose the root cause, set the correct severity,
+  escalate to the right team, and resolve the incident. Simulates on-call
+  SRE/DevOps workflows across three difficulty levels.
+
+author: utkarsh
+tags:
+  - devops
+  - sre
+  - incident-management
+  - triage
+  - real-world
+  - openenv
+
+reward_range: [0.0, 1.0]
+
+observation_space:
+  type: object
+  description: Current incident state visible to the agent
+  fields:
+    incident_id:
+      type: string
+    timestamp:
+      type: string
+      format: iso8601
+    service_name:
+      type: string
+    error_rate:
+      type: number
+      minimum: 0.0
+      maximum: 1.0
+    p99_latency_ms:
+      type: integer
+      minimum: 0
+    log_snippet:
+      type: string
+    affected_endpoints:
+      type: array
+      items:
+        type: string
+    step_count:
+      type: integer
+      minimum: 0
+
+action_space:
+  type: union
+  description: Four typed actions the agent may take each step
+  variants:
+    diagnose:
+      description: Identify the root-cause service and failure mode
+      fields:
+        service:
+          type: string
+        root_cause:
+          type: string
+          enum:
+            - database_overload
+            - memory_leak
+            - network_partition
+            - dependency_timeout
+            - misconfiguration
+            - traffic_spike
+            - cert_expiry
+            - unknown
+    set_severity:
+      description: Assign a severity level to the incident
+      fields:
+        level:
+          type: string
+          enum: [P1, P2, P3, P4]
+    escalate:
+      description: Page the on-call team responsible for resolution
+      fields:
+        team:
+          type: string
+          enum:
+            - backend
+            - frontend
+            - infrastructure
+            - database
+            - security
+            - platform
+            - networking
+    resolve:
+      description: Close the incident with a resolution summary
+      fields:
+        message:
+          type: string
+          minLength: 20
+
+tasks:
+  - id: task_easy
+    name: Single-Service 5xx Spike
+    difficulty: easy
+    description: >
+      A single downstream service begins returning HTTP 500 errors at an
+      elevated rate. Logs clearly point to one root cause. The agent must
+      correctly identify the affected service, assign severity P2, escalate
+      to the database team, and provide a coherent resolution message.
+    max_steps: 10
+    scenario_file: tasks/easy_scenario.json
+    grader: tasks/graders/easy_grader.py
+    expected_score_range: [0.7, 1.0]
+
+  - id: task_medium
+    name: Cascading Failure (auth → api → db)
+    difficulty: medium
+    description: >
+      A cascading failure propagates from the auth service through the API
+      gateway to the database layer. The agent must trace the dependency
+      chain and escalate to the correct team.
+    max_steps: 15
+    scenario_file: tasks/medium_scenario.json
+    grader: tasks/graders/medium_grader.py
+    expected_score_range: [0.4, 0.8]
+
+  - id: task_hard
+    name: Ambiguous Multi-Signal Incident
+    difficulty: hard
+    description: >
+      Three services show anomalous signals simultaneously. Two are red
+      herrings. The true root cause requires log correlation to identify.
+    max_steps: 20
+    scenario_file: tasks/hard_scenario.json
+    grader: tasks/graders/hard_grader.py
+    expected_score_range: [0.2, 0.65]
+
+reward:
+  description: >
+    Partial reward is awarded at each sub-criterion independently.
+  components:
+    correct_service_identified:
+      weight: 0.35
+    correct_severity_set:
+      weight: 0.25
+    correct_team_escalated:
+      weight: 0.25
+    resolution_message_quality:
+      weight: 0.15
+  penalties:
+    wasted_steps:
+      per_step: -0.1
+      threshold: 10
+    repeated_action:
+      amount: -0.05
+
+runtime:
+  entrypoint: uvicorn app.main:app --host 0.0.0.0 --port 7860
+  port: 7860
+  health_check: /health
+  max_episode_steps: 20
